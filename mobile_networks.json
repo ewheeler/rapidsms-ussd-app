@@ -1,0 +1,52 @@
+[{
+        "Country Name":"Senegal",
+        "Country Code":"SN",
+        "Operator Short":"ORANGE SN",
+        "Operator Numeric":"60801",
+        "USSD Balance":"#123#",
+        "USSD Transfer":"#116*1*%(destination)s*%(amount)s*%(PIN)s#",
+        "Subscriber Pattern":"^(\\+?221|0)(77)\\d{7}$"
+    },
+    {
+        "Country Name":"Nigeria",
+        "Country Code":"NG",
+        "Operator Short": "MTN?",
+        "Subscriber Pattern":"^(\\+?234|0)(703|706|803|806)\\d{7}$"
+    },
+    {
+        "Country Name":"Nigeria",
+        "Country Code":"NG",
+        "Operator Short": "GLO?",
+        "Subscriber Pattern":"^(\\+?234|0)(705|805|807)\\d{7}$"
+    },
+    {
+        "Country Name":"Nigeria",
+        "Country Code":"NG",
+        "Operator Short": "ZAIN?",
+        "Subscriber Pattern":"^(\\+?234|0)(708|802|808)\\d{7}$"
+    },
+    {
+        "Country Name":"Nigeria",
+        "Country Code":"NG",
+        "Operator Short": "VISAFONE?",
+        "Subscriber Pattern":"^(\\+?234|0)(7040)\\d{6}$"
+    },
+    {
+        "Country Name":"Nigeria",
+        "Country Code":"NG",
+        "Operator Short": "ETISALAT?",
+        "Subscriber Pattern":"^(\\+?234|0)(809)\\d{7}$"
+    },
+    {
+        "Country Name":"Nigeria",
+        "Country Code":"NG",
+        "Operator Short": "MULTILINKS?",
+        "Subscriber Pattern":"^(\\+?234|0)(7027)\\d{6}$"
+    },
+    {
+        "Country Name":"Nigeria",
+        "Country Code":"NG",
+        "Operator Short": "STARCOMMS?",
+        "Subscriber Pattern":"^(\\+?234|0)(181[26])\\d{4}$"
+    }
+]
