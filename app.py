@@ -47,20 +47,26 @@ class App (rapidsms.app.App):
         pass
 
     def _run_ussd(self, backend_slug, ussd_string):
+        """ Given a backend slug and USSD string, gets backend from router
+            and executes USSD string."""
         backend = self.router.get_backend(backend_slug)
         return backend._Backend__run_ussd(ussd_string)
 
-    def _get_network(self, field, search):
+    def _get_network_by(self, field, search):
+        """ Find a network operator's JSON object by field name and value. """
         for network in self.mobile_networks:
             f = network.get(field)
             if f is not None:
                 if f == search:
                     return network
+        return None
 
     def update_balance(self):
+        self.debug('updating balances...')
         sims = SIM.objects.all()
         balances = []
         for sim in sims:
+            self.debug(sim.operator_name)
             b = self.check_balance(sim.backend.slug, sim.operator_name)
             sim.balance = unicode(b)
             sim.save()
@@ -69,25 +75,31 @@ class App (rapidsms.app.App):
 
     def check_balance(self, backend_slug, operator_short):
         self.debug('checking balance...')
-        network = self._get_network("Operator Short", operator_short)
-        # TODO check for None
-        result = self._run_ussd(backend_slug, network["USSD Balance"])
-        if result is not None:
-            self.debug(result)
-            if len(result) == 1:
-                result = result[0]
-            return result
+        network = self._get_network_by("Operator Short", operator_short)
+        if network is not None:
+            # TODO check for None
+            result = self._run_ussd(backend_slug, network["USSD Balance"])
+            if result is not None:
+                self.debug(result)
+#                if len(result) == 1:
+#                    result = result[0]
+                return result
 
     def transfer_airtime(self, backend_slug, operator_short, destination, amount, pin):
-        network = self._get_network("Operator Short", operator_short)
-        ussd_string = network["USSD Transfer"] % {'destination' : destination,\
-            'amount' : amount, 'PIN' : pin }
-        result = self._run_ussd(backend_slug, ussd_string)
-        if result is not None:
-            self.debug(result)
-            if len(result) == 1:
-                result = result[0]
-            return result
+        network = self._get_network_by("Operator Short", operator_short)
+        if network is not None:
+            # TODO destination number must not include international prefix --
+            # be more clever than this..
+            if destination.startswith('+'):
+                return "Please try again without international prefix"
+            ussd_string = network["USSD Transfer"] % {'destination' : destination,\
+                'amount' : amount, 'PIN' : pin }
+            result = self._run_ussd(backend_slug, ussd_string)
+            if result is not None:
+                self.debug(result)
+#                if len(result) == 1:
+#                    result = result[0]
+                return result
 
     def send_ro_credit(self):
         sim = SIM.objects.all()[0]
