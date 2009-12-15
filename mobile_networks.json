@@ -5,6 +5,7 @@
         "Operator Numeric":"60801",
         "USSD Balance":"#123#",
         "USSD Transfer":"#116*1*%(destination)s*%(amount)s*%(PIN)s#",
+        "USSD Load Airtime":"*123*%(code)s*",
         "Subscriber Pattern":"^(\\+?221|0)(77)\\d{7}$"
     },
     {
