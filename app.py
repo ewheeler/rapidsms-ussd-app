@@ -81,8 +81,6 @@ class App (rapidsms.app.App):
             result = self._run_ussd(backend_slug, network["USSD Balance"])
             if result is not None:
                 self.debug(result)
-#                if len(result) == 1:
-#                    result = result[0]
                 return result
 
     def transfer_airtime(self, backend_slug, operator_short, destination, amount, pin):
@@ -97,17 +95,22 @@ class App (rapidsms.app.App):
             result = self._run_ussd(backend_slug, ussd_string)
             if result is not None:
                 self.debug(result)
-#                if len(result) == 1:
-#                    result = result[0]
                 return result
+
+    def handle(self, message):
+        if message.connection.identity.lower().startswith("orange"):
+            self.process_confirmation(message)
+        if message.text.lower().startswith("balance"):
+            self.debug(self.update_balance())
+        if message.text.lower().startswith("send"):
+            self.debug(self.send_ro_credit())
 
     def send_ro_credit(self):
         sim = SIM.objects.all()[0]
         return self.transfer_airtime(sim.backend.slug, sim.operator_name,\
             "772720297", "100", "")
 
-    def handle(self, message):
-        if message.text.lower().startswith("balance"):
-            return message.respond(self.update_balance())
-        if message.text.lower().startswith("send"):
-            return message.respond(self.send_ro_credit())
+    def process_confirmation(self, message):
+        self.debug('processing confirmation...')
+        self.debug(message.connection.identity)
+        self.debug(message.text)
