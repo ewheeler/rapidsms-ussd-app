@@ -14,7 +14,20 @@ class SIM(models.Model):
 
 class AirtimeTransaction(models.Model):
     sim = models.ForeignKey(SIM)
-    destination = models.CharField(max_length=160)
     amount = models.CharField(max_length=160)
-    initiated = models.DateTimeField(blank=True,null=True)
     confirmed = models.DateTimeField(blank=True,null=True)
+
+class AirtimeTransfer(AirtimeTransaction):
+    destination = models.CharField(max_length=160)
+    initiated = models.DateTimeField(blank=True,null=True)
+
+    @property
+    def crux(self):
+        return self.destination
+
+class AirtimeRecharge(AirtimeTransaction):
+    recharge_code = models.CharField(max_length=160)
+
+    @property
+    def crux(self):
+        return self.recharge_code
