@@ -7,4 +7,8 @@ from ussd.models import *
 class SIMAdmin(admin.ModelAdmin):
     list_display = ('operator_name', 'backend', 'balance')
 
+admin.site.register(OperatorNotification)
+admin.site.register(AirtimeTransaction)
+admin.site.register(AirtimeTransfer)
+admin.site.register(AirtimeRecharge)
 admin.site.register(SIM, SIMAdmin)
