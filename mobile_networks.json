@@ -3,6 +3,7 @@
         "Country Code":"SN",
         "Operator Short":"ORANGE SN",
         "Operator Numeric":"60801",
+        "Operator Identities": "['Orange', '+6005500']",
         "USSD Balance":"#123#",
         "USSD Transfer":"#116*1*%(destination)s*%(amount)s*%(PIN)s#",
         "USSD Load Airtime":"*123*%(code)s*",
