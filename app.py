@@ -74,14 +74,16 @@ class App (rapidsms.app.App):
                     return network
         return None
 
-    def update_balance(self):
+    def update_balances(self):
         self.debug('updating balances...')
         sims = SIM.objects.all()
+        balances = {}
         for sim in sims:
             self.debug(sim.operator_name)
             b = self.check_balance(sim)
             sim.balance = b
             sim.save()
+            return balances.update({sim.operator_name : b})
 
     def check_balance(self, sim):
         self.debug('checking balance...')
@@ -130,12 +132,13 @@ class App (rapidsms.app.App):
                 result = self._run_ussd(sim.backend.slug, ussd_string)
                 self.debug('ussd executed!')
                 if result is not None:
-                    self.debug(result)
-                    trans = AirtimeTransfer(destination=destination,\
-                        amount=amount, sim=sim, initiated=datetime.now(),\
-                        result='P')
-                    trans.save()
-                    self.debug(trans)
+                    if not result.startswith('operation'):
+                        self.debug(result)
+                        trans = AirtimeTransfer(destination=destination,\
+                            amount=amount, sim=sim, initiated=datetime.now(),\
+                            status='P')
+                        trans.save()
+                        self.debug(trans)
                     return result
         else:
             return "Please try again later."
@@ -143,7 +146,7 @@ class App (rapidsms.app.App):
 
     def handle(self, message):
         if message.text.lower().startswith("balance"):
-            self.debug(self.update_balance())
+            self.debug(self.update_balances())
         if message.text.lower().startswith("send"):
             self.debug(self.send_ro_credit())
 
@@ -186,17 +189,35 @@ class App (rapidsms.app.App):
         notification.save()
 
         pending = self.pending_transfer(network)
+        self.debug(pending)
         if isinstance(pending, AirtimeTransfer):
             pending.notification = notification
+            pending.status='S'
+            pending.save()
 
 
     def pending_transfer(self, network):
+        self.debug('finding pending transfer...')
         try:
             pending_transfer = AirtimeTransfer.objects.get(\
-                sim__operator_name=network["Operator Short"], result='P')
+                sim__operator_name=network["Operator Short"], status='P')
+            self.debug('FOUND:')
+            self.debug(pending_transfer)
             return pending_transfer
         except MultipleObjectsReturned:
+            self.debug('many pending transfers!')
             return "MADNESS"
         except ObjectDoesNotExist:
+            self.debug('no pending transfer')
             return None
 
+    def ajax_POST_transfer(self, params, form):
+        self.debug(params)
+        self.debug(form)
+        # form values come in as unicode courtesey of _ajax_ app
+        sim = SIM.objects.get(pk=int(form['sim']))
+        return self.transfer_airtime(sim, str(form['destination']),\
+            str(form['amount']))
+
+    def ajax_POST_balance(self, params, form):
+        return self.update_balances()

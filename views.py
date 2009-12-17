@@ -8,5 +8,9 @@ from django.template import RequestContext
 from rapidsms.webui.utils import render_to_response, paginated
 from ussd.models import *
 
-def index():
-    pass
+def index(req):
+    return render_to_response(req,
+        "ussd/index.html", {
+            "sims" : SIM.objects.all(),
+            "transfers" : AirtimeTransfer.objects.all()
+        })

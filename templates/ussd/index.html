@@ -1,0 +1,84 @@
+{% extends base_template %}
+{% load i18n %}
+{% block title %}USSD{% endblock %}
+{% block content %}
+
+{% block left %}
+<div class="module">
+
+    <h2>SIM Cards</h2>
+    <table width="100%">
+        <thead>
+            <tr>
+                <th>Mobile Operator</th>
+                <th>Backend</th>
+                <th>Airtime Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sim in sims %}
+                <tr>
+                    <td>{{ sim.operator_name }}</td>
+                    <td>{{ sim.backend.slug }}</td>
+                    <td>{{ sim.balance }} CFA</td>
+                    <form method="post" id="fm-balance-update" action="/ajax/ussd/balance">
+                    <td><input type="submit" value="Update Balance"/></td>
+                    </form>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block right %}
+<div class="module">
+
+    <h2>Airtime Transfers</h2>
+    <table width="100%">
+        <thead>
+            <tr>
+                <th>Mobile Operator</th>
+                <th>Amount</th>
+                <th>Initiated</th>
+                <th>Destination</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trans in transfers %}
+                <tr>
+                    <td>{{ trans.sim.operator_name }}</td>
+                    <td>{{ trans.amount }} CFA</td>
+                    <td>{{ trans.initiated|date:"d-M-Y H:m:s" }}</td>
+                    <td>{{ trans.destination }}</td>
+                    <td>{{ trans.get_status_display }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <form method="post" id="fm-trans-new" action="/ajax/ussd/transfer">
+        <div>
+            <label for="fm-trans-new-sim">Transfer from SIM</label>
+            <select id="fm-trans-new-sim" name="sim">
+                {% for sim in sims %}
+                <option value="{{ sim.pk }}">{{ sim.operator_name}}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="fm-trans-new-amt">Amount</label>
+            <input type="text" class="required" id="fm-trans-new-amt" name="amount"/>
+        </div>
+        <div>
+            <label for="fm-trans-new-dest">Destination</label>
+            <input type="text" class="required" id="fm-trans-new-dest" name="destination"/>
+        </div>
+        <div class="submit">
+            <input type="submit" value="Transfer Airtime"/>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% endblock %}
