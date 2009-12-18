@@ -38,6 +38,7 @@ class AirtimeTransaction(models.Model):
         ('S', 'Success'),
         ('F', 'Failure'),
         ('U', 'Unknown'),
+        ('Q', 'Queued'),
     )
     sim = models.ForeignKey(SIM)
     amount = models.CharField(max_length=160, blank=True, null=True)

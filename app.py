@@ -10,6 +10,8 @@ except ImportError:
     import json
 
 from datetime import datetime
+import threading
+import time
 
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
@@ -23,6 +25,7 @@ from ussd.models import *
         "Country Code":"SN",
         "Operator Short":"ORANGE SN",
         "Operator Numeric":"60801",
+        "Operator Identities": "['Orange', '+6005500']",
         "USSD Balance":"#123#",
         "USSD Transfer":"#116*1*%(destination)d*%(amount)d*%(PIN)d#",
         "Subscriber Pattern":"^(\+?221|0)(77)\d{7}$"
@@ -32,7 +35,9 @@ from ussd.models import *
     "Operator Short" is the human-friendly 'short alphanumeric' name returned
     by AT+COPS?, "Operator Numeric" is the 'numeric' name returned by AT+COPS
     and is globally unique (in MCC/MNC format where first 3 digits give country
-    code and last two give network code), "USSD Balance" is the USSD string
+    code and last two give network code), "Operator Identities" is a list of
+    names or numbers the operator is identified by when sending notices and/or
+    confirmation messages to users, "USSD Balance" is the USSD string
     for checking airtime balance, "USSD Transfer" is the USSD string for
     transferring airtime credit with labled string substitutions for 
     destination (phone number credit is to be sent to), amount (amount of airtime
@@ -46,6 +51,12 @@ class App (rapidsms.app.App):
         mobile_networks_file = 'apps/ussd/mobile_networks.json'
         with open(mobile_networks_file, 'r') as f:
             setattr(self, "mobile_networks", json.load(f))
+        self.info("[transferer] Startiing up...")
+        transferer_interval = 10
+        transferer_thread = threading.Thread(target=self.transferer_loop,\
+            args=(transferer_interval,))
+        transferer_thread.daemon = True
+        transferer_thread.start()
 
     def parse(self, message):
         pass
@@ -111,14 +122,17 @@ class App (rapidsms.app.App):
         # TODO
         pass
 
-    def transfer_airtime(self, sim, destination, amount, pin=""):
+    def transfer_airtime(self, sim, destination, amount, pin="", force=False):
         self.debug('transferring airtime...')
         network = self._get_network_by("Operator Short", sim.operator_name)
         # messages confirming transfers can be very vauge -- often not
         # containing the intended destination -- so we will only initiate
         # a new transfer if there are no outstanding transfers expecting
         # a notification message
-        if self.pending_transfer(network) is None:
+        # if you are impatient, you may force a new transfer in spite of
+        # pending transactions -- but its probably better to change the
+        # status of any pending transactions to 'unknown' instead
+        if self.pending_transfer(network) is None or force:
             if network is not None:
                 # TODO destination number must not include international prefix --
                 # be more clever than this..
@@ -132,6 +146,7 @@ class App (rapidsms.app.App):
                 result = self._run_ussd(sim.backend.slug, ussd_string)
                 self.debug('ussd executed!')
                 if result is not None:
+                    # TODO import result code dict from pygsm?
                     if not result.startswith('operation'):
                         self.debug(result)
                         trans = AirtimeTransfer(destination=destination,\
@@ -157,6 +172,7 @@ class App (rapidsms.app.App):
             return self.process_notification(message, network)
 
     def send_ro_credit(self):
+        ''' Transfer 100 CFA credit to Rowena. '''
         sim = SIM.objects.all()[0]
         return self.transfer_airtime(sim, "772720297", "100")
 
@@ -165,7 +181,7 @@ class App (rapidsms.app.App):
         self.debug(message.connection.identity)
         self.debug(message.text)
 
-        # if their notification prefix numberings are any indication,
+        # if the notification prefix numberings are any indication,
         # there may be thousands of kinds of notification messages...
         notice_type = 'U'
 
@@ -176,7 +192,8 @@ class App (rapidsms.app.App):
             # somebody sent us airtime
             notice_type = 'R'
         if message.text.startswith('2049'):
-            # our transfer attempt failed (not enough credit?)
+            # our transfer attempt failed
+            # (not enough credit? max daily transfers?)
             notice_type = 'F'
         if message.text.startswith('201'):
             # our transfer succeeded!
@@ -192,7 +209,11 @@ class App (rapidsms.app.App):
         self.debug(pending)
         if isinstance(pending, AirtimeTransfer):
             pending.notification = notification
-            pending.status='S'
+            # mark airtime transfer with appropriate status
+            if notification.type in ['U', 'S', 'F']:
+                pending.status=notification.type
+            else:
+                pending.status='U'
             pending.save()
 
 
@@ -211,13 +232,48 @@ class App (rapidsms.app.App):
             self.debug('no pending transfer')
             return None
 
+    def wait_until_confirmation_or_timeout(self):
+        # TODO only for one SIM?
+        pauses = 0
+        timeout = 10
+        while pauses < timeout:
+            if AirtimeTransfer.objects.filter(status='P').count() > 0:
+                # hang out for a while bc there are outstanding transfers
+                pauses += 1
+                time.sleep(10)
+                continue
+            else:
+                # no pending transfers, so give caller an OK to proceed
+                return True
+        # still no confirmation? mark ALL pending transfers as unknown
+        AirtimeTransfer.objects.filter(status='P').update(status='U')
+        # and give caller a green light
+        return True
+
     def ajax_POST_transfer(self, params, form):
-        self.debug(params)
         self.debug(form)
-        # form values come in as unicode courtesey of _ajax_ app
+        # form values come in as unicode courtesy of _ajax_ app
         sim = SIM.objects.get(pk=int(form['sim']))
         return self.transfer_airtime(sim, str(form['destination']),\
             str(form['amount']))
 
     def ajax_POST_balance(self, params, form):
         return self.update_balances()
+
+    # Transferer Thread --------------------
+    def transferer_loop(self, seconds=10):
+        self.info("Starting transfer loop...")
+        # pause so we don't try to run USSD codes
+        # before pygsm has booted up
+        time.sleep(10)
+        while True:
+            # look for any queued transfers
+            # in the database, and execute 
+            for transfer in AirtimeTransfer.objects.filter(status="Q"):
+                self.info("Transferring %s to %s." % (transfer.amount, transfer.destination) )
+                sim = SIM.objects.get(pk=transfer.sim.pk)
+                trans = self.transfer_airtime(sim, transfer.destination, transfer.amount)
+                if self.wait_until_confirmation_or_timeout():
+                    continue
+            # wait until it's time to check again
+            time.sleep(seconds)

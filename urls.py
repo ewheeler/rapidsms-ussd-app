@@ -6,4 +6,5 @@ import ussd.views as views
 
 urlpatterns = patterns('',
     url(r'^ussd$', views.index),
+    url(r'^ussd/bulk?$', views.bulk_airtime),
 )
