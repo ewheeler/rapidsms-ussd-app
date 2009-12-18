@@ -39,7 +39,6 @@ def bulk_airtime(req):
 
     reader = csv.DictReader(csvee, quoting=csv.QUOTE_ALL, dialect=dialect)
 
-    sent_to = []
     try:
         for row in reader:
             if row.has_key('NUMERO'):
@@ -49,7 +48,6 @@ def bulk_airtime(req):
                     trans = AirtimeTransfer(destination=str(row['NUMERO']),\
                         amount=amount, status='Q', sim=sim)
                     trans.save()
-                    sent_to.append(trans)
                     continue
 
     except csv.Error, e:
@@ -59,4 +57,3 @@ def bulk_airtime(req):
 
 def csv_transfers(req, format='csv'):
     return export(AirtimeTransfer.objects.all())
-    #return export(AirtimeTransfer.objects.all(), [])
