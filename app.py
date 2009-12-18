@@ -51,7 +51,7 @@ class App (rapidsms.app.App):
         mobile_networks_file = 'apps/ussd/mobile_networks.json'
         with open(mobile_networks_file, 'r') as f:
             setattr(self, "mobile_networks", json.load(f))
-        self.info("[transferer] Startiing up...")
+        self.info("[transferer] Starting up...")
         transferer_interval = 10
         transferer_thread = threading.Thread(target=self.transferer_loop,\
             args=(transferer_interval,))
@@ -94,7 +94,8 @@ class App (rapidsms.app.App):
             b = self.check_balance(sim)
             sim.balance = b
             sim.save()
-            return balances.update({sim.operator_name : b})
+            balances.update({sim.operator_name : b})
+        return balances
 
     def check_balance(self, sim):
         self.debug('checking balance...')
@@ -149,9 +150,15 @@ class App (rapidsms.app.App):
                     # TODO import result code dict from pygsm?
                     if not result.startswith('operation'):
                         self.debug(result)
-                        trans = AirtimeTransfer(destination=destination,\
-                            amount=amount, sim=sim, initiated=datetime.now(),\
-                            status='P')
+                        # did we run a queued transfer?
+                        trans = AirtimeTransfer.objects.filter(\
+                            destination=destination, amount=amount,\
+                            sim=sim, status='Q')[0]
+                        if not trans:
+                            trans = AirtimeTransfer(destination=destination,\
+                                amount=amount, sim=sim)
+                        trans.initiated = datetime.now()
+                        trans.status = 'P'
                         trans.save()
                         self.debug(trans)
                     return result
