@@ -11,6 +11,8 @@ from django.template import RequestContext
 from rapidsms.webui.utils import render_to_response, paginated
 from ussd.models import *
 
+from utilities.export import export
+
 def index(req):
     return render_to_response(req,
         "ussd/index.html", {
@@ -54,3 +56,7 @@ def bulk_airtime(req):
         # TODO handle this error?
         print('%d : %s' % (reader.reader.line_num, e))
     return HttpResponseRedirect("/ussd")
+
+def csv_transfers(req, format='csv'):
+    return export(AirtimeTransfer.objects.all())
+    #return export(AirtimeTransfer.objects.all(), [])

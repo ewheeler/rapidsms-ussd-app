@@ -7,4 +7,5 @@ import ussd.views as views
 urlpatterns = patterns('',
     url(r'^ussd$', views.index),
     url(r'^ussd/bulk?$', views.bulk_airtime),
+    url(r'^ussd/csv/transfers?$', views.csv_transfers),
 )

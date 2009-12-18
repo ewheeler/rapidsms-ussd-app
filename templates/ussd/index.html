@@ -33,6 +33,9 @@
 
 {% block right %}
 <div class="module">
+<div class="toolbar">
+    <a href="/ussd/csv/transfers" class="export">{% trans "Export Airtime Transfers" %}</a>
+</div>
 
     <h2>Airtime Transfers</h2>
     <table width="100%">
@@ -57,48 +60,39 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
+{% endblock %}
+<div>
+    <fieldset>
     <form method="post" id="fm-trans-new" action="/ajax/ussd/transfer">
-        <div>
             <label for="fm-trans-new-sim">Transfer from SIM</label>
             <select id="fm-trans-new-sim" name="sim">
                 {% for sim in sims %}
                 <option value="{{ sim.pk }}">{{ sim.operator_name }}</option>
                 {% endfor %}
             </select>
-        </div>
-        <div>
             <label for="fm-trans-new-amt">Amount</label>
             <input type="text" class="required" id="fm-trans-new-amt" name="amount"/>
-        </div>
-        <div>
             <label for="fm-trans-new-dest">Destination</label>
             <input type="text" class="required" id="fm-trans-new-dest" name="destination"/>
-        </div>
-        <div class="submit">
             <input type="submit" value="Transfer Airtime"/>
-        </div>
     </form>
+    </fieldset>
 </div>
-{% endblock %}
-<form method="post" id="fm-bulk" action="/ussd/bulk" enctype="multipart/form-data">
-        <div>
-            <label for="fm-bulk-sim">Transfer from SIM</label>
-            <select id="fm-bulk-sim" name="sim">
-                {% for sim in sims %}
-                <option value="{{ sim.pk }}">{{ sim.operator_name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label for="fm-bulk-amt">Amount</label>
-            <input type="text" class="required" id="fm-bulk-amt" name="amount"/>
-        </div>
-        <div>
-            <label for="fm-bulk-file">CSV file</label>
-            <input type="file" id="fm-bulk-file" name="file"/>
-        </div>
-        <div>
-            <input type="submit" value="Bulk Transfer Airtime"/>
-        </div>
-</form>
+<div>
+    <fieldset>
+    <form method="post" id="fm-bulk" action="/ussd/bulk" enctype="multipart/form-data">
+                <label for="fm-bulk-sim">Transfer from SIM</label>
+                <select id="fm-bulk-sim" name="sim">
+                    {% for sim in sims %}
+                    <option value="{{ sim.pk }}">{{ sim.operator_name }}</option>
+                    {% endfor %}
+                </select>
+                <label for="fm-bulk-amt">Amount</label>
+                <input type="text" class="required" id="fm-bulk-amt" name="amount"/>
+                <label for="fm-bulk-file">CSV file</label>
+                <input type="file" id="fm-bulk-file" name="file"/>
+                <input type="submit" value="Bulk Transfer Airtime"/>
+    </fieldset>
+</div>
 {% endblock %}
