@@ -5,15 +5,15 @@ from datetime import datetime
 
 from django.db import models
 
-from reporters.models import PersistantBackend
+from rapidsms.models import Backend
 
 class SIM(models.Model):
     operator_name = models.CharField(max_length=20, blank=True, null=True)
-    backend = models.ForeignKey(PersistantBackend, blank=True, null=True)
+    backend = models.ForeignKey(Backend, blank=True, null=True)
     balance = models.CharField(max_length=500, blank=True, null=True)
 
     def __unicode__(self):
-        return "%s (%s)" % (self.operator_name, self.backend.slug)
+        return "%s (%s)" % (self.operator_name, self.backend)
 
 class OperatorNotification(models.Model):
     NOTIFICATION_CHOICES = (
