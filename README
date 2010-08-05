@@ -1,0 +1,8 @@
+RapidSMS app for using USSD services on GSM networks:
+    - check SIM balance
+    - transfer airtime
+
+NOTE: this app is not for the feint of heart in its present condition
+    - not yet updated to work with latest RapidSMS code
+    - only works with a custom version of pygsm: http://github.com/ewheeler/pygsm
+    - requires customization depending on mobile network
